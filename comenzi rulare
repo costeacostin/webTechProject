@@ -1,0 +1,13 @@
+npm install express body-parser sequelize mysql2 --save
+
+mysql-ctl start
+
+mysql -uroot
+
+create database sequelize_messages;
+
+quit
+
+http://docs.sequelizejs.com/manual/tutorial/models-definition.html#data-types
+
+node server.js
