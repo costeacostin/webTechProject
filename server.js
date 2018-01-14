@@ -18,10 +18,44 @@ const Movie = sequelize.define('movies', {
     },
     rating : {
         type : Sequelize.STRING
+    },
+    genre : {
+        type : Sequelize.STRING
+    },
+    country : {
+        type : Sequelize.STRING
     }
 })
 
+const Actor = sequelize.define('actors', {
+    name : {
+        type: Sequelize.STRING
+    },
+    birthdate : {
+        type : Sequelize.STRING
+    },
+    nationality : {
+        type : Sequelize.STRING
+    }
+})
+
+function createMovies()
+{
+  Movie.create({ name: 'Jumanji: Welcome to the Jungle', year: 2017, rating: '4.5', genre:'action', country: 'America' })
+}
+function createActors()
+{
+  Actor.create({name: 'Brad Pitt', birthdate: 1970, nationality: 'american'});
+  Actor.create({name: 'Angelina Jolie', birthdate: 1980, nationality: 'american'});
+}
+
+
+const imdb = require('imdb-api');
+//imdb.get('The Toxic Avenger', {apiKey: 'e92db086', timeout: 30000}).then(console.log).catch(console.log);
 Movie.sync();
+Actor.sync();
+createMovies();
+createActors();
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -39,11 +73,36 @@ app.get('/movies', (req,res,next)=> {
     .catch((err) => next(err))
 })
 
+app.get('/actors', (req,res,next)=> {
+    Actor.findAll()
+    .then((actors) => res.status(200).json(actors))
+    .catch((err) => next(err))
+})
+
+app.get('/actors/:nume', (req,res,next)=> {
+  Actor.findOne({
+  where: { name: req.params.nume}})
+  .then((actors) => res.status(200).json(actors))
+  .catch((err) => next(err))
+
+})
+
+app.get('/imdbMovies/:nume', (req,res,next)=> {
+  console.log("parametru: " + req.params.nume);
+    var imdbRes;
+    imdb.get(req.params.nume, {apiKey: 'e92db086', timeout: 30000}).then(function(response) { 
+      console.log(response)
+      res.json(response);
+    }).catch(imdbRes);
+    //console.log("am trecut de get imdb " + imdbRes);
+    //res.json(imdbRes);
+})
+
 app.post('/movies', (req, res) => {
   console.log(req.body.name); 
   console.log(req.body.year); 
   console.log(req.body.rating); 
-  Movie.create(req.body)
+  Movie.create(req.body) 
     .then(() => res.status(201).send('created'))
     .catch((error) => {
       console.warn(error)
@@ -70,7 +129,7 @@ app.put('/movies/:id', (req, res, next) => {
   Movie.findById(req.params.id)
     .then((movie) => {
       if (movie){
-        return movie.update(req.body, {fields : ['name', 'year', 'rating']})
+        return movie.update(req.body, {fields : ['name', 'year', 'rating', 'genre', 'country']})
       }
       else{
         res.status(404).send('not found')
@@ -107,4 +166,20 @@ app.use((err, req, res, next) => {
   res.status(500).send('some error')
 })
 
-app.listen(8080)
+function uploadMovies()
+{
+  for (var i = 65; i <= 90; i++) {
+     
+       imdb.get(String.fromCharCode(i), {apiKey: 'e92db086', timeout: 30000}).then(function(response)
+       {
+          console.log(response);
+           Movie.create({ name: response.title, year: response.year, rating: response.rating, genre:response.genres, country: '' })
+       }
+       );
+}
+
+
+}
+
+//uploadMovies();
+app.listen(8081, '0.0.0.0')
